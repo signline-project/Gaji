@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistem Manajemen & Slip Gaji Pegawai</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <!-- jsPDF & html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Styling Cetak Slip Thermal & Normal */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printArea, #printArea * {
+        visibility: visible;
+      }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 58mm;
+        margin: 0 auto;
+        padding: 0;
+        background: white !important;
+        color: black !important;
+      }
+      @page {
+        size: 58mm auto;
+        margin: 0mm;
+      }
+    }
+
+    /* Struk Style */
+    .thermal-receipt {
+      font-family: 'Space Mono', 'Courier New', Courier, monospace;
+      background-color: #fafafa;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+    }
+    
+    .receipt-dotted {
+      border-top: 1px dashed #94a3b8;
+      margin: 10px 0;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-100">
+            💸
+          </div>
+          <div>
+            <h1 class="text-lg font-bold text-slate-900 tracking-tight leading-none">Payroll Studio</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Sistem Gaji & Cetak Slip Terintegrasi</p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button id="tabBtnInput" onclick="switchTab('input')" 
+                  class="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150 bg-white text-indigo-700 shadow-xs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            <span>Input & Cetak Slip</span>
+          </button>
+          
+          <button id="tabBtnView" onclick="switchTab('view')" 
+                  class="flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span>Riwayat & View Gaji</span>
+            <span id="badgeCount" class="ml-1 px-1.5 py-0.5 text-xs bg-slate-200 text-slate-700 rounded-full font-bold">0</span>
+          </button>
+        </div>
+
+        <!-- Setting & Status -->
+        <div class="flex items-center space-x-2">
+          <button onclick="openConfigModal()" title="Pengaturan URL Google Apps Script" 
+                  class="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT AREA ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ========================================================== -->
+    <!-- TAB 1: FORM INPUT & LIVE SLIP PREVIEW -->
+    <!-- ========================================================== -->
+    <div id="tabContentInput" class="space-y-6">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Kolom Form Input (Kiri - 7 Kolom) -->
+        <div class="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-200">
+          
+          <div class="flex items-center justify-between pb-5 border-b border-slate-100 mb-6">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">Form Input Gaji Pegawai</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Lengkapi data untuk membuat slip dan menyimpan ke Spreadsheet</p>
+            </div>
+            <button type="button" onclick="resetForm()" class="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition">
+              Reset Form
+            </button>
+          </div>
+
+          <!-- Banner Mode Edit -->
+          <div id="editModeBanner" class="hidden mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between shadow-xs">
+            <div class="flex items-center space-x-2.5">
+              <span class="px-2 py-1 bg-amber-200 text-amber-900 rounded-md text-xs font-black tracking-wide">✏️ MODE EDIT</span>
+              <div>
+                <p class="text-xs font-bold text-amber-900 leading-tight">Mengubah Data Slip: <span id="editBannerInfo" class="underline">-</span></p>
+                <p class="text-[11px] text-amber-700">Perubahan akan memperbarui data langsung di Google Spreadsheet</p>
+              </div>
+            </div>
+            <button type="button" onclick="cancelEditMode()" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold rounded-lg transition">
+              Batal Edit
+            </button>
+          </div>
+
+          <form id="payrollForm" class="space-y-5" onsubmit="event.preventDefault();">
+            
+            <!-- Section 1: Informasi Pegawai & Toko -->
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 block mb-3">1. Informasi Toko & Karyawan</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Toko / Unit Bisnis</label>
+                  <select id="toko" onchange="handleTokoChange()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+                    <option value="MieKi Ramen">MieKi Ramen</option>
+                    <option value="Tasma Grocery">Tasma Grocery</option>
+                    <option value="Warung Kai">Warung Kai</option>
+                    <option value="custom">-- Toko Lainnya (Ketik Manual) --</option>
+                  </select>
+                  <input type="text" id="toko_custom" placeholder="Nama toko custom..." class="hidden mt-2 w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan / Posisi</label>
+                  <select id="posisi" onchange="updateLivePreview()" 
+                          class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+                    <option value="Full Time Staff">Full Time Staff</option>
+                    <option value="Part Time Staff">Part Time Staff</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Karyawan</label>
+                  <input type="text" id="nama" placeholder="Masukkan nama karyawan" oninput="updateLivePreview()" required
+                         class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Bulan</label>
+                    <select id="bulan" onchange="updateLivePreview()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+                      <option value="Januari">Januari</option>
+                      <option value="Februari">Februari</option>
+                      <option value="Maret">Maret</option>
+                      <option value="April">April</option>
+                      <option value="Mei">Mei</option>
+                      <option value="Juni">Juni</option>
+                      <option value="Juli">Juli</option>
+                      <option value="Agustus">Agustus</option>
+                      <option value="September">September</option>
+                      <option value="Oktober">Oktober</option>
+                      <option value="November">November</option>
+                      <option value="Desember">Desember</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tahun</label>
+                    <select id="tahun" onchange="updateLivePreview()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+                      <option value="2025">2025</option>
+                      <option value="2026">2026</option>
+                      <option value="2027">2027</option>
+                    </select>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Section 2: Komponen Penerimaan Gaji (+) -->
+            <div class="pt-3 border-t border-slate-100">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 block mb-3">2. Komponen Penerimaan (+)</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Gaji Pokok (Rp)</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-slate-400">Rp</span>
+                    <input type="text" id="pokok" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
+                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Bonus / Insentif (Rp)</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-slate-400">Rp</span>
+                    <input type="text" id="bonus" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
+                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Overtime / Lembur (Rp)</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-slate-400">Rp</span>
+                    <input type="text" id="overtime" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
+                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Ket. Tambahan</label>
+                    <input type="text" id="lainnya_text" placeholder="Transport/Makan" oninput="updateLivePreview()"
+                           class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nominal (Rp)</label>
+                    <input type="text" id="lainnya" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
+                           class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Section 3: Komponen Potongan (-) -->
+            <div class="pt-3 border-t border-slate-100">
+              <span class="text-xs font-bold uppercase tracking-wider text-rose-600 block mb-3">3. Komponen Potongan (-)</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Kasbon / Bon (Rp)</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-rose-400">Rp</span>
+                    <input type="text" id="bon" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
+                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Potongan Lainnya (Rp)</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-rose-400">Rp</span>
+                    <input type="text" id="potongan" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
+                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Summary Total Card -->
+            <div class="p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">Total Take-Home Pay (Gaji Bersih)</span>
+                <p class="text-xs text-slate-500">Penghasilan setelah dikurangi bon & potongan</p>
+              </div>
+              <div class="text-right">
+                <span id="calculatedTotalBadge" class="text-2xl font-black text-indigo-700 tracking-tight">Rp 0</span>
+              </div>
+            </div>
+
+            <!-- Action Buttons Simpan & Buat Slip -->
+            <div class="pt-2 flex flex-col sm:flex-row gap-3">
+              <button type="button" id="btnSaveToSheet" onclick="savePayrollData()"
+                      class="flex-1 inline-flex items-center justify-center space-x-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-200 transition">
+                <svg id="saveSpinner" class="hidden animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                <svg id="saveIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                <span id="btnSaveLabel">Simpan ke Google Sheet</span>
+              </button>
+              <button type="button" id="btnCancelEdit" onclick="cancelEditMode()" 
+                      class="hidden px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition">
+                Batal Edit
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+
+        <!-- Kolom Live Preview Slip (Kanan - 5 Kolom) -->
+        <div class="lg:col-span-5 space-y-4">
+          
+          <!-- Box Header Preview -->
+          <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Live Struk Slip Gaji</span>
+              </h3>
+              <span class="text-[11px] font-semibold text-slate-400">Siap Cetak / Bagikan</span>
+            </div>
+
+            <!-- Receipt Container -->
+            <div id="printArea" class="thermal-receipt p-4 text-[13px] text-slate-800 shadow-inner">
+              <div class="text-center">
+                <h4 id="receiptStore" class="font-bold text-base uppercase tracking-wider text-slate-900">MieKi Ramen</h4>
+                <p class="text-xs font-semibold text-slate-600">SLIP GAJI KARYAWAN</p>
+                <p id="receiptPeriode" class="text-xs text-slate-500">Periode: Januari 2025</p>
+              </div>
+
+              <div class="receipt-dotted"></div>
+
+              <div class="flex justify-between text-xs py-0.5">
+                <span class="text-slate-500">Karyawan:</span>
+                <span id="receiptNama" class="font-bold text-slate-900">-</span>
+              </div>
+              <div class="flex justify-between text-xs py-0.5">
+                <span class="text-slate-500">Posisi:</span>
+                <span id="receiptPosisi" class="font-medium text-slate-800">-</span>
+              </div>
+              <div class="flex justify-between text-xs py-0.5">
+                <span class="text-slate-500">Dicetak:</span>
+                <span id="receiptDate" class="text-slate-600">-</span>
+              </div>
+
+              <div class="receipt-dotted"></div>
+
+              <!-- Rincian Item Gaji -->
+              <div id="receiptItems" class="space-y-1 text-xs">
+                <!-- Diisi dinamis oleh updateLivePreview() -->
+              </div>
+
+              <div class="receipt-dotted"></div>
+
+              <div class="flex justify-between items-center text-sm font-bold text-slate-900 pt-0.5">
+                <span>TOTAL DITERIMA:</span>
+                <span id="receiptTotal" class="text-base text-slate-950 font-black">Rp 0</span>
+              </div>
+
+              <div class="receipt-dotted"></div>
+
+              <div class="text-center text-[11px] text-slate-500 pt-1 leading-tight">
+                <p>Terima kasih atas kerja keras Anda!</p>
+                <p class="font-mono text-[10px] mt-1 text-slate-400">*** SLIP RESMI ***</p>
+              </div>
+            </div>
+
+            <!-- Tombol Aksi Slip -->
+            <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
+              
+              <!-- Cetak Thermal 58mm -->
+              <button type="button" onclick="printReceipt()" 
+                      class="flex items-center justify-center space-x-1.5 py-2.5 px-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                <span>Cetak Nota</span>
+              </button>
+
+              <!-- Simpan PDF -->
+              <button type="button" onclick="saveAsPDF()" 
+                      class="flex items-center justify-center space-x-1.5 py-2.5 px-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                <span>PDF Slip</span>
+              </button>
+
+              <!-- Simpan JPEG -->
+              <button type="button" onclick="saveAsJPEG()" 
+                      class="flex items-center justify-center space-x-1.5 py-2.5 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span>Gambar</span>
+              </button>
+
+              <!-- Kirim WhatsApp -->
+              <button type="button" onclick="shareWhatsApp()" 
+                      class="flex items-center justify-center space-x-1.5 py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition">
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                <span>WhatsApp</span>
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- TAB 2: RIWAYAT & VIEW DATA GAJI (TABLE + ANALYTICS) -->
+    <!-- ========================================================== -->
+    <div id="tabContentView" class="hidden space-y-6">
+      
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Total Gaji Dibayarkan -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Gaji Dibayarkan</span>
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              💰
+            </div>
+          </div>
+          <p id="kpiTotalGaji" class="text-2xl font-black text-slate-900 mt-2">Rp 0</p>
+          <p class="text-xs text-slate-400 mt-1">Sesuai filter data yang dipilih</p>
+        </div>
+
+        <!-- Total Slip Dibuat -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Transaksi Slip</span>
+            <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+              📋
+            </div>
+          </div>
+          <p id="kpiTotalPegawai" class="text-2xl font-black text-slate-900 mt-2">0 Slip</p>
+          <p class="text-xs text-slate-400 mt-1">Total data payroll tersimpan</p>
+        </div>
+
+        <!-- Rata-Rata Gaji -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Rata-Rata Gaji / Staf</span>
+            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              📊
+            </div>
+          </div>
+          <p id="kpiAvgGaji" class="text-2xl font-black text-slate-900 mt-2">Rp 0</p>
+          <p class="text-xs text-slate-400 mt-1">Rata-rata take-home pay</p>
+        </div>
+
+        <!-- Total Kasbon & Potongan -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Potongan & Bon</span>
+            <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+              📉
+            </div>
+          </div>
+          <p id="kpiTotalPotongan" class="text-2xl font-black text-rose-600 mt-2">Rp 0</p>
+          <p class="text-xs text-slate-400 mt-1">Akumulasi potongan karyawan</p>
+        </div>
+
+      </div>
+
+      <!-- Filter & Search Controls Bar -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          
+          <!-- Search Box -->
+          <div class="relative flex-1 min-w-[240px]">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input type="text" id="filterSearch" placeholder="Cari nama karyawan atau posisi..." oninput="applyFilters()"
+                   class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            
+            <!-- Filter Toko -->
+            <select id="filterToko" onchange="applyFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+              <option value="">Semua Toko</option>
+              <option value="MieKi Ramen">MieKi Ramen</option>
+              <option value="Tasma Grocery">Tasma Grocery</option>
+              <option value="Warung Kai">Warung Kai</option>
+            </select>
+
+            <!-- Filter Jabatan / Status -->
+            <select id="filterPosisi" onchange="applyFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+              <option value="">Semua Jabatan</option>
+              <option value="Full Time Staff">Full Time Staff</option>
+              <option value="Part Time Staff">Part Time Staff</option>
+            </select>
+
+            <!-- Filter Periode Bulan -->
+            <select id="filterBulan" onchange="applyFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+              <option value="">Semua Periode</option>
+              <option value="Januari">Januari</option>
+              <option value="Februari">Februari</option>
+              <option value="Maret">Maret</option>
+              <option value="April">April</option>
+              <option value="Mei">Mei</option>
+              <option value="Juni">Juni</option>
+              <option value="Juli">Juli</option>
+              <option value="Agustus">Agustus</option>
+              <option value="September">September</option>
+              <option value="Oktober">Oktober</option>
+              <option value="November">November</option>
+              <option value="Desember">Desember</option>
+            </select>
+
+            <!-- Tombol Refresh Data -->
+            <button onclick="fetchPayrollData()" title="Muat Ulang Data dari Google Sheet" 
+                    class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-sm rounded-xl transition flex items-center space-x-1.5">
+              <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span>Refresh</span>
+            </button>
+
+            <!-- Tombol Export CSV -->
+            <button onclick="exportToCSV()" title="Ekspor data tabel ke CSV / Excel" 
+                    class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-sm rounded-xl transition flex items-center space-x-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Export CSV</span>
+            </button>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Data Table Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold text-xs uppercase tracking-wider">
+                <th class="py-3.5 px-4">No</th>
+                <th class="py-3.5 px-4">Tanggal & Toko</th>
+                <th class="py-3.5 px-4">Karyawan</th>
+                <th class="py-3.5 px-4">Periode</th>
+                <th class="py-3.5 px-4 text-right">Gaji Pokok</th>
+                <th class="py-3.5 px-4 text-right">Tunjangan & Lembur</th>
+                <th class="py-3.5 px-4 text-right">Potongan / Bon</th>
+                <th class="py-3.5 px-4 text-right">Total Diterima</th>
+                <th class="py-3.5 px-4 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="payrollTableBody" class="divide-y divide-slate-100 text-sm">
+              <!-- Baris tabel akan di-render dinamis oleh JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- State Kosong / Loading -->
+        <div id="tableLoadingState" class="hidden p-12 text-center">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-3"></div>
+          <p class="text-sm font-semibold text-slate-600">Menghubungkan ke Google Spreadsheet...</p>
+        </div>
+
+        <div id="tableEmptyState" class="hidden p-12 text-center">
+          <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-xl">
+            📂
+          </div>
+          <h4 class="text-base font-bold text-slate-700">Belum Ada Data Gaji</h4>
+          <p class="text-xs text-slate-400 mt-1">Data yang Anda simpan melalui form input akan tampil di sini.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= MODAL DETAIL / CETAK ULANG SLIP ================= -->
+  <div id="modalSlipDetail" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative my-8">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <h3 class="text-base font-bold text-slate-800">Detail & Cetak Ulang Slip</h3>
+        <button onclick="closeSlipModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Container Slip Modal -->
+      <div id="modalPrintArea" class="thermal-receipt p-4 text-[13px] text-slate-800">
+        <!-- Terisi oleh showSlipModal(item) -->
+      </div>
+
+      <!-- Aksi Modal -->
+      <div class="mt-4 grid grid-cols-4 gap-2 text-xs font-semibold">
+        <button type="button" onclick="printModalReceipt()" 
+                class="py-2.5 px-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition flex items-center justify-center space-x-1">
+          <span>🖨️ Cetak</span>
+        </button>
+        <button type="button" onclick="downloadModalPDF()" 
+                class="py-2.5 px-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition flex items-center justify-center space-x-1">
+          <span>📄 PDF</span>
+        </button>
+        <button type="button" onclick="shareModalWA()" 
+                class="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition flex items-center justify-center space-x-1">
+          <span>💬 WA</span>
+        </button>
+        <button type="button" onclick="editCurrentModalSlip()" 
+                class="py-2.5 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition flex items-center justify-center space-x-1" title="Edit Data Slip Ini">
+          <span>✏️ Edit</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL CONFIG / GOOGLE SCRIPT URL ================= -->
+  <div id="modalConfig" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 relative">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <h3 class="text-base font-bold text-slate-800">Pengaturan Google Apps Script</h3>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-600">
+        <p>Aplikasi ini terhubung langsung ke Google Spreadsheet via Google Apps Script Web App.</p>
+        
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1 text-xs">Web App Exec URL (Deployment URL):</label>
+          <input type="text" id="cfgScriptUrl" 
+                 class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
+          <strong>Tips:</strong> Pastikan saat men-deploy Apps Script, opsi <em>"Who has access"</em> disetel ke <strong>"Anyone" (Siapa saja)</strong> agar aplikasi web ini dapat menyimpan dan membaca data.
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2">
+          <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 font-semibold transition">Batal</button>
+          <button onclick="saveScriptUrlConfig()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition">Simpan URL</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= TOAST NOTIFICATION ================= -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden transition-all duration-300 transform translate-y-2">
+    <div id="toastContent" class="flex items-center space-x-3 px-4 py-3 rounded-2xl shadow-xl text-sm font-medium border">
+      <span id="toastIcon" class="text-base">✅</span>
+      <span id="toastMessage" class="text-slate-800">Notifikasi</span>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    // URL Google Apps Script Default (Bisa diganti di Pengaturan)
+    const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby_3TQ8ITucsQdnRqtHoGflQ2NjMY1gs4ikGJOMUrRd3pdoomPXk2z_0UB_NjAfppPYtg/exec";
+    
+    // In-memory data store
+    let payrollRecords = [];
+    let currentModalItem = null;
+    let editingRowId = null;
+
+    // Inisialisasi saat pertama kali buka
+    document.addEventListener("DOMContentLoaded", () => {
+      // Set default periode ke bulan & tahun sekarang
+      const dateNow = new Date();
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      document.getElementById('bulan').value = monthNames[dateNow.getMonth()];
+      document.getElementById('tahun').value = String(dateNow.getFullYear());
+
+      // Update preview live struk
+      updateLivePreview();
+
+      // Muat data riwayat dari Google Sheet di background
+      fetchPayrollData(true);
+    });
+
+    // Helper: Ambil URL aktif
+    function getScriptUrl() {
+      return localStorage.getItem("gaji_script_url") || DEFAULT_SCRIPT_URL;
+    }
+
+    // Modal Config Handler
+    function openConfigModal() {
+      document.getElementById('cfgScriptUrl').value = getScriptUrl();
+      document.getElementById('modalConfig').classList.remove('hidden');
+    }
+    function closeConfigModal() {
+      document.getElementById('modalConfig').classList.add('hidden');
+    }
+    function saveScriptUrlConfig() {
+      const val = document.getElementById('cfgScriptUrl').value.trim();
+      if (val) {
+        localStorage.setItem("gaji_script_url", val);
+        showToast("URL Web App berhasil disimpan!", "success");
+        closeConfigModal();
+        fetchPayrollData();
+      }
+    }
+
+    // Helper: Format Angka ke Rupiah
+    function formatRupiah(val) {
+      const num = Number(val) || 0;
+      return "Rp " + num.toLocaleString("id-ID");
+    }
+
+    // Input Currency Formatter Real-time (Titik pemisah ribuan)
+    function formatCurrencyInput(input) {
+      let value = input.value.replace(/\D/g, "");
+      if (value === "") {
+        input.value = "";
+        return;
+      }
+      input.value = parseInt(value, 10).toLocaleString("id-ID");
+    }
+
+    // Mengambil nilai integer dari input berformat rupiah
+    function getNumericValue(elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return 0;
+      const raw = el.value.replace(/\D/g, "");
+      return parseInt(raw, 10) || 0;
+    }
+
+    // Switch Tab (Input vs View)
+    function switchTab(tab) {
+      const tabInput = document.getElementById('tabContentInput');
+      const tabView = document.getElementById('tabContentView');
+      const btnInput = document.getElementById('tabBtnInput');
+      const btnView = document.getElementById('tabBtnView');
+
+      if (tab === 'input') {
+        tabInput.classList.remove('hidden');
+        tabView.classList.add('hidden');
+        btnInput.className = "flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150 bg-white text-indigo-700 shadow-xs";
+        btnView.className = "flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900";
+      } else {
+        tabInput.classList.add('hidden');
+        tabView.classList.remove('hidden');
+        btnView.className = "flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150 bg-white text-indigo-700 shadow-xs";
+        btnInput.className = "flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900";
+        // Refresh filter
+        applyFilters();
+      }
+    }
+
+    // Custom Toko toggle
+    function handleTokoChange() {
+      const select = document.getElementById('toko');
+      const customInput = document.getElementById('toko_custom');
+      if (select.value === 'custom') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+      } else {
+        customInput.classList.add('hidden');
+      }
+      updateLivePreview();
+    }
+
+    function getSelectedToko() {
+      const select = document.getElementById('toko');
+      if (select.value === 'custom') {
+        return document.getElementById('toko_custom').value.trim() || 'Toko Mandiri';
+      }
+      return select.value;
+    }
+
+    // Ambil Data Form Lengkap
+    function getFormData() {
+      const toko = getSelectedToko();
+      const nama = document.getElementById('nama').value.trim() || "-";
+      const posisi = document.getElementById('posisi').value.trim() || "-";
+      const bulan = document.getElementById('bulan').value;
+      const tahun = document.getElementById('tahun').value;
+      const periode = `${bulan} ${tahun}`;
+
+      const pokok = getNumericValue('pokok');
+      const bonus = getNumericValue('bonus');
+      const overtime = getNumericValue('overtime');
+      const lainnya_text = document.getElementById('lainnya_text').value.trim() || "Tambahan";
+      const lainnya = getNumericValue('lainnya');
+      const bon = getNumericValue('bon');
+      const potongan = getNumericValue('potongan');
+
+      const subtotalPenerimaan = pokok + bonus + overtime + lainnya;
+      const subtotalPotongan = bon + potongan;
+      const total = subtotalPenerimaan - subtotalPotongan;
+
+      return {
+        toko, nama, posisi, bulan, tahun, periode,
+        pokok, bonus, overtime, lainnya_text, lainnya,
+        bon, potongan, total, subtotalPenerimaan, subtotalPotongan
+      };
+    }
+
+    // Update Live Preview Struk
+    function updateLivePreview() {
+      const d = getFormData();
+      
+      // Update badge total di form
+      document.getElementById('calculatedTotalBadge').innerText = formatRupiah(d.total);
+
+      // Update Struk Preview
+      document.getElementById('receiptStore').innerText = d.toko;
+      document.getElementById('receiptNama').innerText = d.nama;
+      document.getElementById('receiptPosisi').innerText = d.posisi;
+      document.getElementById('receiptPeriode').innerText = "Periode: " + d.periode;
+      
+      const now = new Date();
+      document.getElementById('receiptDate').innerText = now.toLocaleDateString('id-ID', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      let itemsHtml = "";
+      if (d.pokok > 0) {
+        itemsHtml += `<div class="flex justify-between py-0.5"><span>Gaji Pokok</span><span class="font-bold">${formatRupiah(d.pokok)}</span></div>`;
+      }
+      if (d.bonus > 0) {
+        itemsHtml += `<div class="flex justify-between py-0.5"><span>Bonus</span><span class="font-bold">${formatRupiah(d.bonus)}</span></div>`;
+      }
+      if (d.overtime > 0) {
+        itemsHtml += `<div class="flex justify-between py-0.5"><span>Overtime (Lembur)</span><span class="font-bold">${formatRupiah(d.overtime)}</span></div>`;
+      }
+      if (d.lainnya > 0) {
+        itemsHtml += `<div class="flex justify-between py-0.5"><span>${d.lainnya_text}</span><span class="font-bold">${formatRupiah(d.lainnya)}</span></div>`;
+      }
+      if (d.bon > 0) {
+        itemsHtml += `<div class="flex justify-between py-0.5 text-rose-700"><span>Kasbon (Bon)</span><span class="font-bold">-${formatRupiah(d.bon)}</span></div>`;
+      }
+      if (d.potongan > 0) {
+        itemsHtml += `<div class="flex justify-between py-0.5 text-rose-700"><span>Potongan</span><span class="font-bold">-${formatRupiah(d.potongan)}</span></div>`;
+      }
+
+      if (!itemsHtml) {
+        itemsHtml = `<div class="text-center py-2 text-slate-400 italic text-xs">Belum ada rincian nominal diinput</div>`;
+      }
+
+      document.getElementById('receiptItems').innerHTML = itemsHtml;
+      document.getElementById('receiptTotal').innerText = formatRupiah(d.total);
+    }
+
+    // Reset Form
+    function resetForm() {
+      cancelEditModeState();
+      document.getElementById('nama').value = "";
+      document.getElementById('posisi').value = "Full Time Staff";
+      document.getElementById('pokok').value = "";
+      document.getElementById('bonus').value = "";
+      document.getElementById('overtime').value = "";
+      document.getElementById('lainnya_text').value = "";
+      document.getElementById('lainnya').value = "";
+      document.getElementById('bon').value = "";
+      document.getElementById('potongan').value = "";
+      updateLivePreview();
+      showToast("Formulir telah direset", "info");
+    }
+
+    function cancelEditModeState() {
+      editingRowId = null;
+      const banner = document.getElementById('editModeBanner');
+      const btnSaveLabel = document.getElementById('btnSaveLabel');
+      const btnCancelEdit = document.getElementById('btnCancelEdit');
+      if (banner) banner.classList.add('hidden');
+      if (btnSaveLabel) btnSaveLabel.innerText = "Simpan ke Google Sheet";
+      if (btnCancelEdit) btnCancelEdit.classList.add('hidden');
+    }
+
+    function cancelEditMode() {
+      cancelEditModeState();
+      resetForm();
+      showToast("Mode edit dibatalkan", "info");
+    }
+
+    function loadSlipForEdit(item) {
+      if (!item) return;
+      closeSlipModal();
+
+      editingRowId = item.row_id;
+
+      // Toko
+      const tokoSelect = document.getElementById('toko');
+      const tokoCustom = document.getElementById('toko_custom');
+      const standardStores = ["MieKi Ramen", "Tasma Grocery", "Warung Kai"];
+      if (standardStores.includes(item.toko)) {
+        tokoSelect.value = item.toko;
+        tokoCustom.classList.add('hidden');
+        tokoCustom.value = "";
+      } else {
+        tokoSelect.value = "custom";
+        tokoCustom.classList.remove('hidden');
+        tokoCustom.value = item.toko || "";
+      }
+
+      // Nama & Posisi
+      document.getElementById('nama').value = item.nama || "";
+      const posisiSelect = document.getElementById('posisi');
+      if (item.posisi === "Part Time Staff") {
+        posisiSelect.value = "Part Time Staff";
+      } else {
+        posisiSelect.value = "Full Time Staff";
+      }
+
+      // Periode (Bulan & Tahun)
+      if (item.periode) {
+        const parts = item.periode.split(" ");
+        if (parts.length >= 2) {
+          const m = parts[0];
+          const y = parts[1];
+          const bulanSelect = document.getElementById('bulan');
+          const tahunSelect = document.getElementById('tahun');
+          if (bulanSelect) bulanSelect.value = m;
+          if (tahunSelect) tahunSelect.value = y;
+        }
+      }
+
+      // Komponen Keuangan
+      document.getElementById('pokok').value = item.pokok ? Number(item.pokok).toLocaleString('id-ID') : "";
+      document.getElementById('bonus').value = item.bonus ? Number(item.bonus).toLocaleString('id-ID') : "";
+      document.getElementById('overtime').value = item.overtime ? Number(item.overtime).toLocaleString('id-ID') : "";
+      document.getElementById('lainnya_text').value = item.lainnya_text || "";
+      document.getElementById('lainnya').value = item.lainnya ? Number(item.lainnya).toLocaleString('id-ID') : "";
+      document.getElementById('bon').value = item.bon ? Number(item.bon).toLocaleString('id-ID') : "";
+      document.getElementById('potongan').value = item.potongan ? Number(item.potongan).toLocaleString('id-ID') : "";
+
+      // Tampilkan banner edit & ubah tombol
+      const banner = document.getElementById('editModeBanner');
+      const bannerInfo = document.getElementById('editBannerInfo');
+      const btnSaveLabel = document.getElementById('btnSaveLabel');
+      const btnCancelEdit = document.getElementById('btnCancelEdit');
+
+      if (banner) banner.classList.remove('hidden');
+      if (bannerInfo) bannerInfo.innerText = `${item.nama} - ${item.periode} (${item.toko})`;
+      if (btnSaveLabel) btnSaveLabel.innerText = "Simpan Perubahan Slip (Update)";
+      if (btnCancelEdit) btnCancelEdit.classList.remove('hidden');
+
+      // Beralih ke Tab Input
+      switchTab('input');
+      updateLivePreview();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      showToast(`Mode edit aktif untuk ${item.nama}`, "info");
+    }
+
+    function editCurrentModalSlip() {
+      if (currentModalItem) {
+        loadSlipForEdit(currentModalItem);
+      }
+    }
+
+    // ==========================================
+    // SIMPAN KE GOOGLE SPREADSHEET (POST)
+    // ==========================================
+    async function savePayrollData() {
+      const d = getFormData();
+      if (!d.nama || d.nama === "-") {
+        showToast("Mohon isi Nama Karyawan terlebih dahulu!", "error");
+        document.getElementById('nama').focus();
+        return;
+      }
+
+      const isEditing = editingRowId !== null;
+      const saveBtn = document.getElementById('btnSaveToSheet');
+      const spinner = document.getElementById('saveSpinner');
+      saveBtn.disabled = true;
+      spinner.classList.remove('hidden');
+
+      const payload = {
+        action: isEditing ? "update" : "create",
+        row_id: editingRowId,
+        toko: d.toko,
+        nama: d.nama,
+        posisi: d.posisi,
+        periode: d.periode,
+        pokok: d.pokok,
+        bonus: d.bonus,
+        overtime: d.overtime,
+        lainnya_text: d.lainnya_text,
+        lainnya: d.lainnya,
+        bon: d.bon,
+        potongan: d.potongan,
+        total: d.total
+      };
+
+      const url = getScriptUrl();
+
+      try {
+        // Kirim via fetch POST menggunakan mode no-cors / text/plain untuk Apps Script
+        await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (isEditing) {
+          showToast("Sukses! Perubahan slip berhasil disimpan di Spreadsheet", "success");
+          const idx = payrollRecords.findIndex(r => r.row_id === editingRowId);
+          if (idx !== -1) {
+            payrollRecords[idx] = {
+              ...payrollRecords[idx],
+              toko: d.toko,
+              nama: d.nama,
+              posisi: d.posisi,
+              periode: d.periode,
+              pokok: d.pokok,
+              bonus: d.bonus,
+              overtime: d.overtime,
+              lainnya_text: d.lainnya_text,
+              lainnya: d.lainnya,
+              bon: d.bon,
+              potongan: d.potongan,
+              total: d.total
+            };
+          }
+          cancelEditModeState();
+          applyFilters();
+        } else {
+          showToast("Sukses! Data gaji tersimpan di Spreadsheet", "success");
+          
+          // Buat record lokal instan agar riwayat langsung terupdate
+          const newLocalRecord = {
+            row_id: payrollRecords.length + 2,
+            timestamp: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            toko: d.toko,
+            nama: d.nama,
+            posisi: d.posisi,
+            periode: d.periode,
+            pokok: d.pokok,
+            bonus: d.bonus,
+            overtime: d.overtime,
+            lainnya_text: d.lainnya_text,
+            lainnya: d.lainnya,
+            bon: d.bon,
+            potongan: d.potongan,
+            total: d.total
+          };
+          payrollRecords.unshift(newLocalRecord);
+          updateBadgeCount();
+          applyFilters();
+        }
+
+      } catch (err) {
+        console.error("Gagal simpan:", err);
+        showToast("Terkirim ke Apps Script. Silakan periksa spreadsheet.", "info");
+      } finally {
+        saveBtn.disabled = false;
+        spinner.classList.add('hidden');
+      }
+    }
+
+    // ==========================================
+    // AMBIL RIWAYAT DARI GOOGLE SHEET (GET)
+    // ==========================================
+    async function fetchPayrollData(silent = false) {
+      const refreshIcon = document.getElementById('refreshIcon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+      
+      const tableBody = document.getElementById('payrollTableBody');
+      const loadingState = document.getElementById('tableLoadingState');
+      const emptyState = document.getElementById('tableEmptyState');
+
+      if (!silent) {
+        loadingState.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        tableBody.innerHTML = "";
+      }
+
+      const url = getScriptUrl();
+
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+
+        if (json && json.data && Array.isArray(json.data)) {
+          payrollRecords = json.data;
+        } else if (Array.isArray(json)) {
+          payrollRecords = json;
+        } else {
+          payrollRecords = [];
+        }
+
+        updateBadgeCount();
+        applyFilters();
+        if (!silent) showToast(`Berhasil memuat ${payrollRecords.length} data riwayat`, "success");
+
+      } catch (err) {
+        console.warn("Koneksi Apps Script GET belum mengembalikan JSON atau offline:", err);
+        if (!silent) {
+          showToast("Catatan: Pastikan kode Google Apps Script (Code.gs) telah diperbarui dan di-deploy!", "info");
+        }
+        applyFilters();
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+        loadingState.classList.add('hidden');
+      }
+    }
+
+    function updateBadgeCount() {
+      const badge = document.getElementById('badgeCount');
+      if (badge) badge.innerText = payrollRecords.length;
+    }
+
+    // ==========================================
+    // FILTER & RENDER TABEL RIWAYAT
+    // ==========================================
+    function applyFilters() {
+      const search = (document.getElementById('filterSearch')?.value || "").toLowerCase().trim();
+      const filterToko = document.getElementById('filterToko')?.value || "";
+      const filterPosisi = document.getElementById('filterPosisi')?.value || "";
+      const filterBulan = document.getElementById('filterBulan')?.value || "";
+
+      let filtered = payrollRecords.filter(item => {
+        const matchSearch = !search || 
+          (item.nama && item.nama.toLowerCase().includes(search)) ||
+          (item.posisi && item.posisi.toLowerCase().includes(search));
+        
+        const matchToko = !filterToko || item.toko === filterToko;
+        const matchPosisi = !filterPosisi || item.posisi === filterPosisi;
+        const matchBulan = !filterBulan || (item.periode && item.periode.toLowerCase().includes(filterBulan.toLowerCase()));
+
+        return matchSearch && matchToko && matchPosisi && matchBulan;
+      });
+
+      renderTable(filtered);
+      renderKPIs(filtered);
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('payrollTableBody');
+      const emptyState = document.getElementById('tableEmptyState');
+
+      tbody.innerHTML = "";
+
+      if (data.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      data.forEach((item, index) => {
+        const tunjanganTotal = (item.bonus || 0) + (item.overtime || 0) + (item.lainnya || 0);
+        const potonganTotal = (item.bon || 0) + (item.potongan || 0);
+
+        // Badge color toko
+        let tokoBadgeClass = "bg-slate-100 text-slate-700";
+        if (item.toko === "MieKi Ramen") tokoBadgeClass = "bg-orange-100 text-orange-800 border border-orange-200";
+        else if (item.toko === "Tasma Grocery") tokoBadgeClass = "bg-emerald-100 text-emerald-800 border border-emerald-200";
+        else if (item.toko === "Warung Kai") tokoBadgeClass = "bg-blue-100 text-blue-800 border border-blue-200";
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/80 transition duration-150";
+        tr.innerHTML = `
+          <td class="py-3.5 px-4 text-xs font-semibold text-slate-400">${index + 1}</td>
+          <td class="py-3.5 px-4">
+            <div class="font-semibold text-slate-900 text-xs">${item.timestamp || "-"}</div>
+            <span class="inline-block mt-0.5 px-2 py-0.5 text-[11px] font-bold rounded-md ${tokoBadgeClass}">${item.toko}</span>
+          </td>
+          <td class="py-3.5 px-4">
+            <div class="font-bold text-slate-900">${item.nama}</div>
+            <div class="text-xs text-slate-500">${item.posisi}</div>
+          </td>
+          <td class="py-3.5 px-4 text-xs font-medium text-slate-700">${item.periode}</td>
+          <td class="py-3.5 px-4 text-xs font-semibold text-slate-900 text-right">${formatRupiah(item.pokok)}</td>
+          <td class="py-3.5 px-4 text-xs font-semibold text-emerald-600 text-right">+${formatRupiah(tunjanganTotal)}</td>
+          <td class="py-3.5 px-4 text-xs font-semibold text-rose-600 text-right">-${formatRupiah(potonganTotal)}</td>
+          <td class="py-3.5 px-4 text-right">
+            <span class="font-extrabold text-indigo-700 text-sm">${formatRupiah(item.total)}</span>
+          </td>
+          <td class="py-3.5 px-4 text-center">
+            <div class="inline-flex items-center space-x-1">
+              <button onclick='openSlipModal(${JSON.stringify(item)})' 
+                      class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1" title="Lihat & Cetak Slip">
+                <span>👁️ Slip</span>
+              </button>
+              <button onclick='loadSlipForEdit(${JSON.stringify(item)})' 
+                      class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1" title="Edit Slip Ini">
+                <span>✏️ Edit</span>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderKPIs(data) {
+      const totalGaji = data.reduce((acc, cur) => acc + (Number(cur.total) || 0), 0);
+      const totalPotongan = data.reduce((acc, cur) => acc + (Number(cur.bon) || 0) + (Number(cur.potongan) || 0), 0);
+      const count = data.length;
+      const avg = count > 0 ? Math.round(totalGaji / count) : 0;
+
+      document.getElementById('kpiTotalGaji').innerText = formatRupiah(totalGaji);
+      document.getElementById('kpiTotalPegawai').innerText = `${count} Slip`;
+      document.getElementById('kpiAvgGaji').innerText = formatRupiah(avg);
+      document.getElementById('kpiTotalPotongan').innerText = formatRupiah(totalPotongan);
+    }
+
+    // ==========================================
+    // MODAL CETAK ULANG SLIP DARI RIWAYAT
+    // ==========================================
+    function openSlipModal(item) {
+      currentModalItem = item;
+      const modalEl = document.getElementById('modalSlipDetail');
+      const printArea = document.getElementById('modalPrintArea');
+
+      let itemsHtml = "";
+      if (item.pokok > 0) itemsHtml += `<div class="flex justify-between py-0.5"><span>Gaji Pokok</span><span class="font-bold">${formatRupiah(item.pokok)}</span></div>`;
+      if (item.bonus > 0) itemsHtml += `<div class="flex justify-between py-0.5"><span>Bonus</span><span class="font-bold">${formatRupiah(item.bonus)}</span></div>`;
+      if (item.overtime > 0) itemsHtml += `<div class="flex justify-between py-0.5"><span>Overtime</span><span class="font-bold">${formatRupiah(item.overtime)}</span></div>`;
+      if (item.lainnya > 0) itemsHtml += `<div class="flex justify-between py-0.5"><span>${item.lainnya_text || "Tambahan"}</span><span class="font-bold">${formatRupiah(item.lainnya)}</span></div>`;
+      if (item.bon > 0) itemsHtml += `<div class="flex justify-between py-0.5 text-rose-700"><span>Kasbon</span><span class="font-bold">-${formatRupiah(item.bon)}</span></div>`;
+      if (item.potongan > 0) itemsHtml += `<div class="flex justify-between py-0.5 text-rose-700"><span>Potongan</span><span class="font-bold">-${formatRupiah(item.potongan)}</span></div>`;
+
+      printArea.innerHTML = `
+        <div class="text-center">
+          <h4 class="font-bold text-base uppercase tracking-wider text-slate-900">${item.toko}</h4>
+          <p class="text-xs font-semibold text-slate-600">SLIP GAJI KARYAWAN</p>
+          <p class="text-xs text-slate-500">Periode: ${item.periode}</p>
+        </div>
+        <div class="receipt-dotted"></div>
+        <div class="flex justify-between text-xs py-0.5"><span class="text-slate-500">Karyawan:</span><span class="font-bold text-slate-900">${item.nama}</span></div>
+        <div class="flex justify-between text-xs py-0.5"><span class="text-slate-500">Posisi:</span><span class="font-medium text-slate-800">${item.posisi}</span></div>
+        <div class="flex justify-between text-xs py-0.5"><span class="text-slate-500">Tanggal:</span><span class="text-slate-600">${item.timestamp}</span></div>
+        <div class="receipt-dotted"></div>
+        <div class="space-y-1 text-xs">${itemsHtml}</div>
+        <div class="receipt-dotted"></div>
+        <div class="flex justify-between items-center text-sm font-bold text-slate-900 pt-0.5">
+          <span>TOTAL TERIMA:</span>
+          <span class="text-base text-slate-950 font-black">${formatRupiah(item.total)}</span>
+        </div>
+        <div class="receipt-dotted"></div>
+        <div class="text-center text-[11px] text-slate-500 pt-1">
+          <p>Terima kasih atas kerja keras Anda!</p>
+          <p class="font-mono text-[10px] mt-1 text-slate-400">*** SLIP RESMI ***</p>
+        </div>
+      `;
+
+      modalEl.classList.remove('hidden');
+    }
+
+    function closeSlipModal() {
+      document.getElementById('modalSlipDetail').classList.add('hidden');
+      currentModalItem = null;
+    }
+
+    function printModalReceipt() {
+      const content = document.getElementById('modalPrintArea').innerHTML;
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Cetak Slip Gaji</title>
+            <style>
+              body { font-family: 'Courier New', Courier, monospace; width: 58mm; margin: 0; padding: 8px; font-size: 13px; }
+              .receipt-dotted { border-top: 1px dashed #000; margin: 8px 0; }
+              .flex { display: flex; justify-content: space-between; margin: 3px 0; }
+              .text-center { text-align: center; }
+              .font-bold { font-weight: bold; }
+            </style>
+          </head>
+          <body>${content}</body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+    }
+
+    async function downloadModalPDF() {
+      if (!currentModalItem) return;
+      const element = document.getElementById('modalPrintArea');
+      const { jsPDF } = window.jspdf;
+      const canvas = await html2canvas(element, { backgroundColor: "#ffffff", scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const mmWidth = 58;
+      const mmHeight = (canvas.height * mmWidth) / canvas.width;
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [mmWidth, mmHeight] });
+      pdf.addImage(imgData, "PNG", 0, 0, mmWidth, mmHeight);
+      pdf.save(`Slip_Gaji_${currentModalItem.nama.replace(/\s+/g, '_')}_${currentModalItem.periode.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    function shareModalWA() {
+      if (!currentModalItem) return;
+      const text = `*SLIP GAJI - ${currentModalItem.toko.toUpperCase()}*\n` +
+                   `Periode: ${currentModalItem.periode}\n` +
+                   `------------------------------\n` +
+                   `Nama: *${currentModalItem.nama}*\n` +
+                   `Posisi: ${currentModalItem.posisi}\n` +
+                   `------------------------------\n` +
+                   `Gaji Pokok: ${formatRupiah(currentModalItem.pokok)}\n` +
+                   (currentModalItem.bonus > 0 ? `Bonus: ${formatRupiah(currentModalItem.bonus)}\n` : '') +
+                   (currentModalItem.overtime > 0 ? `Lembur: ${formatRupiah(currentModalItem.overtime)}\n` : '') +
+                   (currentModalItem.lainnya > 0 ? `${currentModalItem.lainnya_text}: ${formatRupiah(currentModalItem.lainnya)}\n` : '') +
+                   (currentModalItem.bon > 0 ? `Kasbon: -${formatRupiah(currentModalItem.bon)}\n` : '') +
+                   (currentModalItem.potongan > 0 ? `Potongan: -${formatRupiah(currentModalItem.potongan)}\n` : '') +
+                   `------------------------------\n` +
+                   `*TOTAL TERIMA: ${formatRupiah(currentModalItem.total)}*\n` +
+                   `------------------------------\n` +
+                   `Terima kasih atas dedikasi dan kerja keras Anda! 🙏`;
+      window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+    }
+
+    // ==========================================
+    // FITUR CETAK / SIMPAN SLIP (LIVE PREVIEW)
+    // ==========================================
+    function printReceipt() {
+      window.print();
+    }
+
+    async function saveAsPDF() {
+      const d = getFormData();
+      const element = document.getElementById("printArea");
+      const { jsPDF } = window.jspdf;
+      showToast("Memproses file PDF...", "info");
+
+      const canvas = await html2canvas(element, { backgroundColor: "#ffffff", scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const mmWidth = 58;
+      const mmHeight = (canvas.height * mmWidth) / canvas.width;
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [mmWidth, mmHeight] });
+      pdf.addImage(imgData, "PNG", 0, 0, mmWidth, mmHeight);
+      pdf.save(`Slip_Gaji_${d.nama.replace(/\s+/g, '_')}_${d.periode.replace(/\s+/g, '_')}.pdf`);
+      showToast("PDF berhasil diunduh!", "success");
+    }
+
+    async function saveAsJPEG() {
+      const d = getFormData();
+      const element = document.getElementById("printArea");
+      showToast("Membuat gambar...", "info");
+
+      const canvas = await html2canvas(element, { backgroundColor: "#ffffff", scale: 2 });
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/jpeg", 0.95);
+      link.download = `Slip_Gaji_${d.nama.replace(/\s+/g, '_')}.jpg`;
+      link.click();
+      showToast("Gambar berhasil disimpan!", "success");
+    }
+
+    function shareWhatsApp() {
+      const d = getFormData();
+      if (!d.nama || d.nama === "-") {
+        showToast("Isi data nama karyawan terlebih dahulu", "error");
+        return;
+      }
+      const text = `*SLIP GAJI - ${d.toko.toUpperCase()}*\n` +
+                   `Periode: ${d.periode}\n` +
+                   `------------------------------\n` +
+                   `Nama: *${d.nama}*\n` +
+                   `Posisi: ${d.posisi}\n` +
+                   `------------------------------\n` +
+                   `Gaji Pokok: ${formatRupiah(d.pokok)}\n` +
+                   (d.bonus > 0 ? `Bonus: ${formatRupiah(d.bonus)}\n` : '') +
+                   (d.overtime > 0 ? `Lembur: ${formatRupiah(d.overtime)}\n` : '') +
+                   (d.lainnya > 0 ? `${d.lainnya_text}: ${formatRupiah(d.lainnya)}\n` : '') +
+                   (d.bon > 0 ? `Kasbon: -${formatRupiah(d.bon)}\n` : '') +
+                   (d.potongan > 0 ? `Potongan: -${formatRupiah(d.potongan)}\n` : '') +
+                   `------------------------------\n` +
+                   `*TOTAL TERIMA: ${formatRupiah(d.total)}*\n` +
+                   `------------------------------\n` +
+                   `Terima kasih atas kerja keras Anda! 🙏`;
+
+      window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+    }
+
+    // ==========================================
+    // EXPORT TO CSV / EXCEL
+    // ==========================================
+    function exportToCSV() {
+      if (payrollRecords.length === 0) {
+        showToast("Tidak ada data untuk diekspor", "error");
+        return;
+      }
+
+      const headers = ["Timestamp", "Toko", "Nama", "Posisi", "Periode", "Gaji Pokok", "Bonus", "Overtime", "Tambahan (Ket)", "Tambahan (Nominal)", "Kasbon", "Potongan", "Total Gaji"];
+      let csvContent = "\uFEFF" + headers.join(",") + "\n";
+
+      payrollRecords.forEach(r => {
+        const row = [
+          `"${r.timestamp || ''}"`,
+          `"${r.toko || ''}"`,
+          `"${r.nama || ''}"`,
+          `"${r.posisi || ''}"`,
+          `"${r.periode || ''}"`,
+          r.pokok || 0,
+          r.bonus || 0,
+          r.overtime || 0,
+          `"${r.lainnya_text || ''}"`,
+          r.lainnya || 0,
+          r.bon || 0,
+          r.potongan || 0,
+          r.total || 0
+        ];
+        csvContent += row.join(",") + "\n";
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Rekap_Gaji_Pegawai_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast("File CSV rekap gaji berhasil diunduh!", "success");
+    }
+
+    // ==========================================
+    // TOAST NOTIFICATION UTILITY
+    // ==========================================
+    function showToast(message, type = "success") {
+      const toast = document.getElementById('toast');
+      const toastContent = document.getElementById('toastContent');
+      const toastIcon = document.getElementById('toastIcon');
+      const toastMessage = document.getElementById('toastMessage');
+
+      toastMessage.innerText = message;
+
+      if (type === "success") {
+        toastIcon.innerText = "✅";
+        toastContent.className = "flex items-center space-x-3 px-5 py-3 rounded-2xl shadow-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200";
+      } else if (type === "error") {
+        toastIcon.innerText = "⚠️";
+        toastContent.className = "flex items-center space-x-3 px-5 py-3 rounded-2xl shadow-xl text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200";
+      } else {
+        toastIcon.innerText = "ℹ️";
+        toastContent.className = "flex items-center space-x-3 px-5 py-3 rounded-2xl shadow-xl text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200";
+      }
+
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2');
+        toast.classList.add('translate-y-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+      }, 3500);
+    }
+  </script>
+
+</body>
+</html>
+
