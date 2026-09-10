@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Sistem Manajemen & Slip Gaji Pegawai</title>
   
   <!-- Tailwind CSS -->
@@ -38,6 +38,22 @@
   </script>
 
   <style>
+    html {
+      scroll-behavior: smooth;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Mencegah auto-zoom di iOS Safari saat fokus ke input */
+    @media screen and (max-width: 640px) {
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+    }
+
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+
     /* Styling Cetak Slip Thermal & Normal */
     @media print {
       body * {
@@ -96,39 +112,51 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen font-sans flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
   <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+  <header class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2.5 sm:py-0 sm:h-16 gap-2 sm:gap-4">
         
-        <!-- Logo & Title -->
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-100">
-            💸
+        <!-- Baris Atas Mobile: Logo & Judul + Tombol Setelan -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2.5 sm:space-x-3">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg sm:text-xl shadow-md shadow-indigo-100 shrink-0">
+              💸
+            </div>
+            <div>
+              <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-tight">Payroll Studio</h1>
+              <p class="text-[11px] sm:text-xs text-slate-500 leading-tight">Sistem Gaji & Cetak Slip</p>
+            </div>
           </div>
-          <div>
-            <h1 class="text-lg font-bold text-slate-900 tracking-tight leading-none">Payroll Studio</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Sistem Gaji & Cetak Slip Terintegrasi</p>
+
+          <!-- Tombol Setting di Layar Mobile (Baris Atas) -->
+          <div class="flex items-center sm:hidden">
+            <button onclick="openConfigModal()" title="Pengaturan URL Google Apps Script" 
+                    class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:scale-95 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
           </div>
         </div>
 
         <!-- Navigation Tabs -->
-        <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div class="grid grid-cols-2 sm:flex sm:items-center bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1 sm:gap-0">
           <button id="tabBtnInput" onclick="switchTab('input')" 
-                  class="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150 bg-white text-indigo-700 shadow-xs">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-            <span>Input & Cetak Slip</span>
+                  class="flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-150 bg-white text-indigo-700 shadow-xs">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            <span class="inline sm:hidden">Input Slip</span>
+            <span class="hidden sm:inline">Input & Cetak Slip</span>
           </button>
           
           <button id="tabBtnView" onclick="switchTab('view')" 
-                  class="flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            <span>Riwayat & View Gaji</span>
-            <span id="badgeCount" class="ml-1 px-1.5 py-0.5 text-xs bg-slate-200 text-slate-700 rounded-full font-bold">0</span>
+                  class="flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span class="inline sm:hidden">Riwayat</span>
+            <span class="hidden sm:inline">Riwayat & View Gaji</span>
+            <span id="badgeCount" class="ml-1 px-1.5 py-0.5 text-[10px] sm:text-xs bg-slate-200 text-slate-700 rounded-full font-bold">0</span>
           </button>
         </div>
 
-        <!-- Setting & Status -->
-        <div class="flex items-center space-x-2">
+        <!-- Tombol Setting di Layar Desktop -->
+        <div class="hidden sm:flex items-center space-x-2">
           <button onclick="openConfigModal()" title="Pengaturan URL Google Apps Script" 
                   class="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -140,38 +168,38 @@
   </header>
 
   <!-- ================= MAIN CONTENT AREA ================= -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 lg:pb-8">
 
     <!-- ========================================================== -->
     <!-- TAB 1: FORM INPUT & LIVE SLIP PREVIEW -->
     <!-- ========================================================== -->
     <div id="tabContentInput" class="space-y-6">
       
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         
         <!-- Kolom Form Input (Kiri - 7 Kolom) -->
-        <div class="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-200">
+        <div class="lg:col-span-7 bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-xs border border-slate-200">
           
-          <div class="flex items-center justify-between pb-5 border-b border-slate-100 mb-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
             <div>
-              <h2 class="text-xl font-bold text-slate-900">Form Input Gaji Pegawai</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Lengkapi data untuk membuat slip dan menyimpan ke Spreadsheet</p>
+              <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Form Input Gaji Pegawai</h2>
+              <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Lengkapi data untuk membuat slip dan menyimpan ke Spreadsheet</p>
             </div>
-            <button type="button" onclick="resetForm()" class="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition">
+            <button type="button" onclick="resetForm()" class="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl active:scale-95 transition shrink-0">
               Reset Form
             </button>
           </div>
 
           <!-- Banner Mode Edit -->
-          <div id="editModeBanner" class="hidden mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between shadow-xs">
+          <div id="editModeBanner" class="hidden mb-5 p-3.5 sm:p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
             <div class="flex items-center space-x-2.5">
-              <span class="px-2 py-1 bg-amber-200 text-amber-900 rounded-md text-xs font-black tracking-wide">✏️ MODE EDIT</span>
+              <span class="px-2 py-1 bg-amber-200 text-amber-900 rounded-md text-xs font-black tracking-wide shrink-0">✏️ MODE EDIT</span>
               <div>
                 <p class="text-xs font-bold text-amber-900 leading-tight">Mengubah Data Slip: <span id="editBannerInfo" class="underline">-</span></p>
                 <p class="text-[11px] text-amber-700">Perubahan akan memperbarui data langsung di Google Spreadsheet</p>
               </div>
             </div>
-            <button type="button" onclick="cancelEditMode()" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold rounded-lg transition">
+            <button type="button" onclick="cancelEditMode()" class="w-full sm:w-auto px-3 py-1.5 bg-amber-100 hover:bg-amber-200 active:scale-95 text-amber-800 text-xs font-bold rounded-lg transition text-center">
               Batal Edit
             </button>
           </div>
@@ -180,24 +208,24 @@
             
             <!-- Section 1: Informasi Pegawai & Toko -->
             <div>
-              <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 block mb-3">1. Informasi Toko & Karyawan</span>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 block mb-2.5">1. Informasi Toko & Karyawan</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Toko / Unit Bisnis</label>
-                  <select id="toko" onchange="handleTokoChange()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+                  <select id="toko" onchange="handleTokoChange()" class="w-full px-3.5 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
                     <option value="MieKi Ramen">MieKi Ramen</option>
                     <option value="Tasma Grocery">Tasma Grocery</option>
                     <option value="Warung Kai">Warung Kai</option>
                     <option value="custom">-- Toko Lainnya (Ketik Manual) --</option>
                   </select>
-                  <input type="text" id="toko_custom" placeholder="Nama toko custom..." class="hidden mt-2 w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+                  <input type="text" id="toko_custom" placeholder="Nama toko custom..." class="hidden mt-2 w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
                 </div>
 
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan / Posisi</label>
                   <select id="posisi" onchange="updateLivePreview()" 
-                          class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+                          class="w-full px-3.5 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
                     <option value="Full Time Staff">Full Time Staff</option>
                     <option value="Part Time Staff">Part Time Staff</option>
                   </select>
@@ -206,13 +234,13 @@
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Karyawan</label>
                   <input type="text" id="nama" placeholder="Masukkan nama karyawan" oninput="updateLivePreview()" required
-                         class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+                         class="w-full px-3.5 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-2.5">
                   <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Bulan</label>
-                    <select id="bulan" onchange="updateLivePreview()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+                    <select id="bulan" onchange="updateLivePreview()" class="w-full px-2.5 sm:px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
                       <option value="Januari">Januari</option>
                       <option value="Februari">Februari</option>
                       <option value="Maret">Maret</option>
@@ -229,7 +257,7 @@
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Tahun</label>
-                    <select id="tahun" onchange="updateLivePreview()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+                    <select id="tahun" onchange="updateLivePreview()" class="w-full px-2.5 sm:px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
                       <option value="2025">2025</option>
                       <option value="2026">2026</option>
                       <option value="2027">2027</option>
@@ -242,15 +270,15 @@
 
             <!-- Section 2: Komponen Penerimaan Gaji (+) -->
             <div class="pt-3 border-t border-slate-100">
-              <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 block mb-3">2. Komponen Penerimaan (+)</span>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 block mb-2.5">2. Komponen Penerimaan (+)</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Gaji Pokok (Rp)</label>
                   <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-slate-400">Rp</span>
                     <input type="text" id="pokok" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
-                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                           class="w-full pl-10 pr-3.5 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
                   </div>
                 </div>
 
@@ -259,7 +287,7 @@
                   <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-slate-400">Rp</span>
                     <input type="text" id="bonus" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
-                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                           class="w-full pl-10 pr-3.5 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
                   </div>
                 </div>
 
@@ -268,20 +296,20 @@
                   <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-slate-400">Rp</span>
                     <input type="text" id="overtime" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
-                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                           class="w-full pl-10 pr-3.5 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
                   </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Ket. Tambahan</label>
                     <input type="text" id="lainnya_text" placeholder="Transport/Makan" oninput="updateLivePreview()"
-                           class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                           class="w-full px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Nominal (Rp)</label>
                     <input type="text" id="lainnya" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
-                           class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
+                           class="w-full px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition" />
                   </div>
                 </div>
 
@@ -290,15 +318,15 @@
 
             <!-- Section 3: Komponen Potongan (-) -->
             <div class="pt-3 border-t border-slate-100">
-              <span class="text-xs font-bold uppercase tracking-wider text-rose-600 block mb-3">3. Komponen Potongan (-)</span>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-rose-600 block mb-2.5">3. Komponen Potongan (-)</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Kasbon / Bon (Rp)</label>
                   <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-rose-400">Rp</span>
                     <input type="text" id="bon" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
-                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" />
+                           class="w-full pl-10 pr-3.5 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" />
                   </div>
                 </div>
 
@@ -307,7 +335,7 @@
                   <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-rose-400">Rp</span>
                     <input type="text" id="potongan" inputmode="numeric" placeholder="0" oninput="formatCurrencyInput(this); updateLivePreview()"
-                           class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" />
+                           class="w-full pl-10 pr-3.5 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" />
                   </div>
                 </div>
 
@@ -315,26 +343,34 @@
             </div>
 
             <!-- Summary Total Card -->
-            <div class="p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 flex items-center justify-between">
+            <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
               <div>
                 <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">Total Take-Home Pay (Gaji Bersih)</span>
                 <p class="text-xs text-slate-500">Penghasilan setelah dikurangi bon & potongan</p>
               </div>
-              <div class="text-right">
-                <span id="calculatedTotalBadge" class="text-2xl font-black text-indigo-700 tracking-tight">Rp 0</span>
+              <div class="text-left sm:text-right">
+                <span id="calculatedTotalBadge" class="text-2xl sm:text-3xl font-black text-indigo-700 tracking-tight">Rp 0</span>
               </div>
             </div>
 
             <!-- Action Buttons Simpan & Buat Slip -->
-            <div class="pt-2 flex flex-col sm:flex-row gap-3">
+            <div class="pt-2 flex flex-col sm:flex-row gap-2.5 sm:gap-3">
               <button type="button" id="btnSaveToSheet" onclick="savePayrollData()"
-                      class="flex-1 inline-flex items-center justify-center space-x-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-200 transition">
+                      class="flex-1 inline-flex items-center justify-center space-x-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white text-sm font-bold rounded-xl shadow-md shadow-indigo-200 transition">
                 <svg id="saveSpinner" class="hidden animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                 <svg id="saveIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                 <span id="btnSaveLabel">Simpan ke Google Sheet</span>
               </button>
+              
+              <!-- Tombol Pintas Scroll ke Preview di Layar Mobile -->
+              <button type="button" onclick="scrollToPreview()" 
+                      class="inline-flex lg:hidden items-center justify-center space-x-1.5 px-4 py-3 bg-slate-100 hover:bg-slate-200 active:scale-[0.99] text-slate-700 text-sm font-bold rounded-xl transition">
+                <span>Lihat Struk Slip</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+              </button>
+
               <button type="button" id="btnCancelEdit" onclick="cancelEditMode()" 
-                      class="hidden px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition">
+                      class="hidden px-5 py-3.5 bg-slate-100 hover:bg-slate-200 active:scale-[0.99] text-slate-700 text-sm font-bold rounded-xl transition text-center">
                 Batal Edit
               </button>
             </div>
@@ -344,16 +380,19 @@
         </div>
 
         <!-- Kolom Live Preview Slip (Kanan - 5 Kolom) -->
-        <div class="lg:col-span-5 space-y-4">
+        <div id="livePreviewSection" class="lg:col-span-5 space-y-4">
           
           <!-- Box Header Preview -->
-          <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200">
+          <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-1.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Live Struk Slip Gaji</span>
               </h3>
-              <span class="text-[11px] font-semibold text-slate-400">Siap Cetak / Bagikan</span>
+              <button type="button" onclick="scrollToForm()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 lg:hidden flex items-center space-x-1">
+                <span>↑ Kembali ke Form</span>
+              </button>
+              <span class="hidden lg:inline text-[11px] font-semibold text-slate-400">Siap Cetak / Bagikan</span>
             </div>
 
             <!-- Receipt Container -->
@@ -406,29 +445,29 @@
               
               <!-- Cetak Thermal 58mm -->
               <button type="button" onclick="printReceipt()" 
-                      class="flex items-center justify-center space-x-1.5 py-2.5 px-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                      class="flex items-center justify-center space-x-1.5 py-3 px-2 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                 <span>Cetak Nota</span>
               </button>
 
               <!-- Simpan PDF -->
               <button type="button" onclick="saveAsPDF()" 
-                      class="flex items-center justify-center space-x-1.5 py-2.5 px-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                      class="flex items-center justify-center space-x-1.5 py-3 px-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                 <span>PDF Slip</span>
               </button>
 
               <!-- Simpan JPEG -->
               <button type="button" onclick="saveAsJPEG()" 
-                      class="flex items-center justify-center space-x-1.5 py-2.5 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                      class="flex items-center justify-center space-x-1.5 py-3 px-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 <span>Gambar</span>
               </button>
 
               <!-- Kirim WhatsApp -->
               <button type="button" onclick="shareWhatsApp()" 
-                      class="flex items-center justify-center space-x-1.5 py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                      class="flex items-center justify-center space-x-1.5 py-3 px-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl transition">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
                 <span>WhatsApp</span>
               </button>
 
@@ -440,83 +479,99 @@
 
       </div>
 
+      <!-- Sticky Bottom Action Bar Khusus Layar Mobile di Tab Input -->
+      <div id="mobileStickyBar" class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-2xl flex items-center justify-between z-20 lg:hidden pb-[max(0.6rem,env(safe-area-inset-bottom))]">
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-none">Total Gaji</span>
+          <span id="mobileStickyTotal" class="text-base font-black text-indigo-700 leading-tight block mt-0.5">Rp 0</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button type="button" onclick="scrollToPreview()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1">
+            <span>👁️ Struk</span>
+          </button>
+          <button type="button" onclick="savePayrollData()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-200 transition flex items-center space-x-1">
+            <span>💾 Simpan</span>
+          </button>
+        </div>
+      </div>
+
     </div>
 
     <!-- ========================================================== -->
     <!-- TAB 2: RIWAYAT & VIEW DATA GAJI (TABLE + ANALYTICS) -->
     <!-- ========================================================== -->
-    <div id="tabContentView" class="hidden space-y-6">
+    <div id="tabContentView" class="hidden space-y-4 sm:space-y-6">
       
-      <!-- KPI Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- KPI Summary Cards (2x2 di Mobile, 4 Kolom di Desktop) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         
         <!-- Total Gaji Dibayarkan -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Gaji Dibayarkan</span>
-            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Total Gaji</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs sm:text-sm">
               💰
             </div>
           </div>
-          <p id="kpiTotalGaji" class="text-2xl font-black text-slate-900 mt-2">Rp 0</p>
-          <p class="text-xs text-slate-400 mt-1">Sesuai filter data yang dipilih</p>
+          <p id="kpiTotalGaji" class="text-lg sm:text-2xl font-black text-slate-900 mt-1.5 sm:mt-2 truncate">Rp 0</p>
+          <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">Total sesuai filter</p>
         </div>
 
         <!-- Total Slip Dibuat -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Transaksi Slip</span>
-            <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+            <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Total Transaksi</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs sm:text-sm">
               📋
             </div>
           </div>
-          <p id="kpiTotalPegawai" class="text-2xl font-black text-slate-900 mt-2">0 Slip</p>
-          <p class="text-xs text-slate-400 mt-1">Total data payroll tersimpan</p>
+          <p id="kpiTotalPegawai" class="text-lg sm:text-2xl font-black text-slate-900 mt-1.5 sm:mt-2 truncate">0 Slip</p>
+          <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">Total payroll tersimpan</p>
         </div>
 
         <!-- Rata-Rata Gaji -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Rata-Rata Gaji / Staf</span>
-            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Rata-Rata</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs sm:text-sm">
               📊
             </div>
           </div>
-          <p id="kpiAvgGaji" class="text-2xl font-black text-slate-900 mt-2">Rp 0</p>
-          <p class="text-xs text-slate-400 mt-1">Rata-rata take-home pay</p>
+          <p id="kpiAvgGaji" class="text-lg sm:text-2xl font-black text-slate-900 mt-1.5 sm:mt-2 truncate">Rp 0</p>
+          <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">Rata-rata take-home</p>
         </div>
 
         <!-- Total Kasbon & Potongan -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Potongan & Bon</span>
-            <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+            <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Potongan & Bon</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs sm:text-sm">
               📉
             </div>
           </div>
-          <p id="kpiTotalPotongan" class="text-2xl font-black text-rose-600 mt-2">Rp 0</p>
-          <p class="text-xs text-slate-400 mt-1">Akumulasi potongan karyawan</p>
+          <p id="kpiTotalPotongan" class="text-lg sm:text-2xl font-black text-rose-600 mt-1.5 sm:mt-2 truncate">Rp 0</p>
+          <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">Akumulasi potongan</p>
         </div>
 
       </div>
 
-      <!-- Filter & Search Controls Bar -->
-      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-        <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-          
-          <!-- Search Box -->
-          <div class="relative flex-1 min-w-[240px]">
-            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            </span>
-            <input type="text" id="filterSearch" placeholder="Cari nama karyawan atau posisi..." oninput="applyFilters()"
-                   class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
-          </div>
+      <!-- Filter & Search Controls Bar Responsif -->
+      <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <!-- Search Box -->
+        <div class="relative w-full">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </span>
+          <input type="text" id="filterSearch" placeholder="Cari nama karyawan / posisi..." oninput="applyFilters()"
+                 class="w-full pl-10 pr-4 py-2.5 sm:py-2 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+        </div>
 
-          <div class="flex flex-wrap items-center gap-2">
+        <!-- Filter Selects & Buttons -->
+        <div class="flex flex-col sm:flex-row gap-2.5 sm:items-center justify-between">
+          <div class="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-2 flex-1">
             
             <!-- Filter Toko -->
-            <select id="filterToko" onchange="applyFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+            <select id="filterToko" onchange="applyFilters()" class="w-full sm:w-auto px-2 sm:px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition truncate">
               <option value="">Semua Toko</option>
               <option value="MieKi Ramen">MieKi Ramen</option>
               <option value="Tasma Grocery">Tasma Grocery</option>
@@ -524,14 +579,14 @@
             </select>
 
             <!-- Filter Jabatan / Status -->
-            <select id="filterPosisi" onchange="applyFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+            <select id="filterPosisi" onchange="applyFilters()" class="w-full sm:w-auto px-2 sm:px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition truncate">
               <option value="">Semua Jabatan</option>
               <option value="Full Time Staff">Full Time Staff</option>
               <option value="Part Time Staff">Part Time Staff</option>
             </select>
 
             <!-- Filter Periode Bulan -->
-            <select id="filterBulan" onchange="applyFilters()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+            <select id="filterBulan" onchange="applyFilters()" class="w-full sm:w-auto px-2 sm:px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition truncate">
               <option value="">Semua Periode</option>
               <option value="Januari">Januari</option>
               <option value="Februari">Februari</option>
@@ -547,29 +602,33 @@
               <option value="Desember">Desember</option>
             </select>
 
+          </div>
+
+          <!-- Buttons Refresh & Export -->
+          <div class="flex items-center gap-2">
             <!-- Tombol Refresh Data -->
             <button onclick="fetchPayrollData()" title="Muat Ulang Data dari Google Sheet" 
-                    class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-sm rounded-xl transition flex items-center space-x-1.5">
+                    class="flex-1 sm:flex-initial px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 font-semibold text-xs sm:text-sm rounded-xl transition flex items-center justify-center space-x-1.5">
               <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
               <span>Refresh</span>
             </button>
 
             <!-- Tombol Export CSV -->
             <button onclick="exportToCSV()" title="Ekspor data tabel ke CSV / Excel" 
-                    class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-sm rounded-xl transition flex items-center space-x-1.5">
+                    class="flex-1 sm:flex-initial px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 font-semibold text-xs sm:text-sm rounded-xl transition flex items-center justify-center space-x-1.5">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
               <span>Export CSV</span>
             </button>
-
           </div>
 
         </div>
       </div>
 
-      <!-- Data Table Card -->
+      <!-- Container Riwayat Data (Tabel Desktop & Kartu Mobile) -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         
-        <div class="overflow-x-auto">
+        <!-- 1. Tampilan Spreadsheet Desktop (Tampil di Layar md / >= 768px) -->
+        <div class="hidden md:block overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold text-xs uppercase tracking-wider">
@@ -590,13 +649,18 @@
           </table>
         </div>
 
+        <!-- 2. Tampilan Kartu Mobile Ramah Sentuh (Tampil di Layar < md / < 768px) -->
+        <div id="payrollCardsMobile" class="md:hidden p-3 space-y-3">
+          <!-- Kartu mobile akan di-render dinamis oleh JavaScript -->
+        </div>
+
         <!-- State Kosong / Loading -->
-        <div id="tableLoadingState" class="hidden p-12 text-center">
+        <div id="tableLoadingState" class="hidden p-8 sm:p-12 text-center">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-3"></div>
           <p class="text-sm font-semibold text-slate-600">Menghubungkan ke Google Spreadsheet...</p>
         </div>
 
-        <div id="tableEmptyState" class="hidden p-12 text-center">
+        <div id="tableEmptyState" class="hidden p-8 sm:p-12 text-center">
           <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-xl">
             📂
           </div>
@@ -611,37 +675,39 @@
   </main>
 
   <!-- ================= MODAL DETAIL / CETAK ULANG SLIP ================= -->
-  <div id="modalSlipDetail" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative my-8">
+  <div id="modalSlipDetail" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-100 relative my-auto max-h-[92vh] flex flex-col">
       
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 shrink-0">
         <h3 class="text-base font-bold text-slate-800">Detail & Cetak Ulang Slip</h3>
-        <button onclick="closeSlipModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+        <button onclick="closeSlipModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg active:scale-95 transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
-      <!-- Container Slip Modal -->
-      <div id="modalPrintArea" class="thermal-receipt p-4 text-[13px] text-slate-800">
-        <!-- Terisi oleh showSlipModal(item) -->
+      <!-- Container Slip Modal dengan Scroll Vertikal yang Halus -->
+      <div class="overflow-y-auto flex-1 pr-1">
+        <div id="modalPrintArea" class="thermal-receipt p-4 text-[13px] text-slate-800">
+          <!-- Terisi oleh showSlipModal(item) -->
+        </div>
       </div>
 
       <!-- Aksi Modal -->
-      <div class="mt-4 grid grid-cols-4 gap-2 text-xs font-semibold">
+      <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-4 gap-2 text-xs font-semibold shrink-0">
         <button type="button" onclick="printModalReceipt()" 
-                class="py-2.5 px-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition flex items-center justify-center space-x-1">
+                class="py-2.5 px-1 sm:px-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl transition flex items-center justify-center space-x-1">
           <span>🖨️ Cetak</span>
         </button>
         <button type="button" onclick="downloadModalPDF()" 
-                class="py-2.5 px-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition flex items-center justify-center space-x-1">
+                class="py-2.5 px-1 sm:px-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl transition flex items-center justify-center space-x-1">
           <span>📄 PDF</span>
         </button>
         <button type="button" onclick="shareModalWA()" 
-                class="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition flex items-center justify-center space-x-1">
+                class="py-2.5 px-1 sm:px-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl transition flex items-center justify-center space-x-1">
           <span>💬 WA</span>
         </button>
         <button type="button" onclick="editCurrentModalSlip()" 
-                class="py-2.5 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition flex items-center justify-center space-x-1" title="Edit Data Slip Ini">
+                class="py-2.5 px-1 sm:px-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl transition flex items-center justify-center space-x-1" title="Edit Data Slip Ini">
           <span>✏️ Edit</span>
         </button>
       </div>
@@ -650,12 +716,12 @@
   </div>
 
   <!-- ================= MODAL CONFIG / GOOGLE SCRIPT URL ================= -->
-  <div id="modalConfig" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 relative">
+  <div id="modalConfig" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 relative my-auto max-h-[92vh] overflow-y-auto">
       
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
         <h3 class="text-base font-bold text-slate-800">Pengaturan Google Apps Script</h3>
-        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg active:scale-95 transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
@@ -666,7 +732,7 @@
         <div>
           <label class="block font-semibold text-slate-700 mb-1 text-xs">Web App Exec URL (Deployment URL):</label>
           <input type="text" id="cfgScriptUrl" 
-                 class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+                 class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
         </div>
 
         <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
@@ -674,8 +740,8 @@
         </div>
 
         <div class="flex justify-end space-x-2 pt-2">
-          <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 font-semibold transition">Batal</button>
-          <button onclick="saveScriptUrlConfig()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition">Simpan URL</button>
+          <button onclick="closeConfigModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl text-slate-700 font-semibold transition">Batal</button>
+          <button onclick="saveScriptUrlConfig()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl font-bold transition">Simpan URL</button>
         </div>
       </div>
 
@@ -683,7 +749,7 @@
   </div>
 
   <!-- ================= TOAST NOTIFICATION ================= -->
-  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden transition-all duration-300 transform translate-y-2">
+  <div id="toast" class="fixed bottom-4 inset-x-4 sm:inset-x-auto sm:right-5 sm:bottom-5 z-50 hidden transition-all duration-300 transform translate-y-2 max-w-sm mx-auto sm:mx-0">
     <div id="toastContent" class="flex items-center space-x-3 px-4 py-3 rounded-2xl shadow-xl text-sm font-medium border">
       <span id="toastIcon" class="text-base">✅</span>
       <span id="toastMessage" class="text-slate-800">Notifikasi</span>
@@ -768,17 +834,23 @@
       const tabView = document.getElementById('tabContentView');
       const btnInput = document.getElementById('tabBtnInput');
       const btnView = document.getElementById('tabBtnView');
+      const mobileStickyBar = document.getElementById('mobileStickyBar');
+
+      const activeClass = "flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-150 bg-white text-indigo-700 shadow-xs";
+      const inactiveClass = "flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900";
 
       if (tab === 'input') {
         tabInput.classList.remove('hidden');
         tabView.classList.add('hidden');
-        btnInput.className = "flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150 bg-white text-indigo-700 shadow-xs";
-        btnView.className = "flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900";
+        btnInput.className = activeClass;
+        btnView.className = inactiveClass;
+        if (mobileStickyBar) mobileStickyBar.classList.remove('hidden');
       } else {
         tabInput.classList.add('hidden');
         tabView.classList.remove('hidden');
-        btnView.className = "flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150 bg-white text-indigo-700 shadow-xs";
-        btnInput.className = "flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900";
+        btnView.className = activeClass;
+        btnInput.className = inactiveClass;
+        if (mobileStickyBar) mobileStickyBar.classList.add('hidden');
         // Refresh filter
         applyFilters();
       }
@@ -877,6 +949,21 @@
 
       document.getElementById('receiptItems').innerHTML = itemsHtml;
       document.getElementById('receiptTotal').innerText = formatRupiah(d.total);
+
+      // Update sticky mobile total jika ada
+      const mobileStickyTotal = document.getElementById('mobileStickyTotal');
+      if (mobileStickyTotal) mobileStickyTotal.innerText = formatRupiah(d.total);
+    }
+
+    // Scroll helper untuk navigasi cepat di layar mobile
+    function scrollToPreview() {
+      const el = document.getElementById('livePreviewSection');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function scrollToForm() {
+      const el = document.getElementById('payrollForm');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
     }
 
     // Reset Form
@@ -1168,9 +1255,11 @@
 
     function renderTable(data) {
       const tbody = document.getElementById('payrollTableBody');
+      const mobileCards = document.getElementById('payrollCardsMobile');
       const emptyState = document.getElementById('tableEmptyState');
 
-      tbody.innerHTML = "";
+      if (tbody) tbody.innerHTML = "";
+      if (mobileCards) mobileCards.innerHTML = "";
 
       if (data.length === 0) {
         emptyState.classList.remove('hidden');
@@ -1188,40 +1277,113 @@
         else if (item.toko === "Tasma Grocery") tokoBadgeClass = "bg-emerald-100 text-emerald-800 border border-emerald-200";
         else if (item.toko === "Warung Kai") tokoBadgeClass = "bg-blue-100 text-blue-800 border border-blue-200";
 
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50/80 transition duration-150";
-        tr.innerHTML = `
-          <td class="py-3.5 px-4 text-xs font-semibold text-slate-400">${index + 1}</td>
-          <td class="py-3.5 px-4">
-            <div class="font-semibold text-slate-900 text-xs">${item.timestamp || "-"}</div>
-            <span class="inline-block mt-0.5 px-2 py-0.5 text-[11px] font-bold rounded-md ${tokoBadgeClass}">${item.toko}</span>
-          </td>
-          <td class="py-3.5 px-4">
-            <div class="font-bold text-slate-900">${item.nama}</div>
-            <div class="text-xs text-slate-500">${item.posisi}</div>
-          </td>
-          <td class="py-3.5 px-4 text-xs font-medium text-slate-700">${item.periode}</td>
-          <td class="py-3.5 px-4 text-xs font-semibold text-slate-900 text-right">${formatRupiah(item.pokok)}</td>
-          <td class="py-3.5 px-4 text-xs font-semibold text-emerald-600 text-right">+${formatRupiah(tunjanganTotal)}</td>
-          <td class="py-3.5 px-4 text-xs font-semibold text-rose-600 text-right">-${formatRupiah(potonganTotal)}</td>
-          <td class="py-3.5 px-4 text-right">
-            <span class="font-extrabold text-indigo-700 text-sm">${formatRupiah(item.total)}</span>
-          </td>
-          <td class="py-3.5 px-4 text-center">
-            <div class="inline-flex items-center space-x-1">
-              <button onclick='openSlipModal(${JSON.stringify(item)})' 
-                      class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1" title="Lihat & Cetak Slip">
-                <span>👁️ Slip</span>
-              </button>
-              <button onclick='loadSlipForEdit(${JSON.stringify(item)})' 
-                      class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1" title="Edit Slip Ini">
-                <span>✏️ Edit</span>
-              </button>
+        // 1. Render Baris Tabel Desktop (>= md)
+        if (tbody) {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50/80 transition duration-150";
+          tr.innerHTML = `
+            <td class="py-3.5 px-4 text-xs font-semibold text-slate-400">${index + 1}</td>
+            <td class="py-3.5 px-4">
+              <div class="font-semibold text-slate-900 text-xs">${item.timestamp || "-"}</div>
+              <span class="inline-block mt-0.5 px-2 py-0.5 text-[11px] font-bold rounded-md ${tokoBadgeClass}">${item.toko}</span>
+            </td>
+            <td class="py-3.5 px-4">
+              <div class="font-bold text-slate-900">${item.nama}</div>
+              <div class="text-xs text-slate-500">${item.posisi}</div>
+            </td>
+            <td class="py-3.5 px-4 text-xs font-medium text-slate-700">${item.periode}</td>
+            <td class="py-3.5 px-4 text-xs font-semibold text-slate-900 text-right">${formatRupiah(item.pokok)}</td>
+            <td class="py-3.5 px-4 text-xs font-semibold text-emerald-600 text-right">+${formatRupiah(tunjanganTotal)}</td>
+            <td class="py-3.5 px-4 text-xs font-semibold text-rose-600 text-right">-${formatRupiah(potonganTotal)}</td>
+            <td class="py-3.5 px-4 text-right">
+              <span class="font-extrabold text-indigo-700 text-sm">${formatRupiah(item.total)}</span>
+            </td>
+            <td class="py-3.5 px-4 text-center">
+              <div class="inline-flex items-center space-x-1">
+                <button onclick='openSlipModalById(${item.row_id})' 
+                        class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1" title="Lihat & Cetak Slip">
+                  <span>👁️ Slip</span>
+                </button>
+                <button onclick='loadSlipForEditById(${item.row_id})' 
+                        class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1" title="Edit Slip Ini">
+                  <span>✏️ Edit</span>
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        // 2. Render Kartu Interaktif Mobile (< md)
+        if (mobileCards) {
+          const card = document.createElement('div');
+          card.className = "bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-xs hover:border-indigo-200 transition space-y-2.5";
+          card.innerHTML = `
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center space-x-1.5">
+                  <span class="text-xs font-bold text-slate-400">#${index + 1}</span>
+                  <span class="font-bold text-slate-900 text-base leading-tight truncate block">${item.nama}</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">${item.posisi}</p>
+              </div>
+              <span class="shrink-0 px-2 py-0.5 text-[11px] font-bold rounded-lg ${tokoBadgeClass}">${item.toko}</span>
             </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
+
+            <div class="p-2.5 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100">
+              <div>
+                <span class="text-[10px] uppercase font-bold text-slate-400 block leading-none">Total Diterima</span>
+                <span class="text-base font-black text-indigo-700 mt-1 block leading-tight">${formatRupiah(item.total)}</span>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] uppercase font-bold text-slate-400 block leading-none">Periode</span>
+                <span class="text-xs font-semibold text-slate-700 mt-1 block leading-tight">${item.periode}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-1 text-center text-[11px] py-1 bg-slate-50/50 rounded-lg border border-slate-100/80">
+              <div class="px-1 truncate">
+                <span class="text-slate-400 block text-[9px] uppercase font-semibold">Pokok</span>
+                <span class="font-semibold text-slate-800 text-[11px] truncate block">${formatRupiah(item.pokok)}</span>
+              </div>
+              <div class="px-1 border-x border-slate-200 truncate">
+                <span class="text-slate-400 block text-[9px] uppercase font-semibold">Tunjangan</span>
+                <span class="font-semibold text-emerald-600 text-[11px] truncate block">+${formatRupiah(tunjanganTotal)}</span>
+              </div>
+              <div class="px-1 truncate">
+                <span class="text-slate-400 block text-[9px] uppercase font-semibold">Potongan</span>
+                <span class="font-semibold text-rose-600 text-[11px] truncate block">-${formatRupiah(potonganTotal)}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+              <span class="text-[11px] text-slate-400">${item.timestamp || '-'}</span>
+              <div class="flex items-center space-x-1.5">
+                <button onclick="openSlipModalById(${item.row_id})" 
+                        class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 rounded-lg font-bold transition flex items-center space-x-1">
+                  <span>👁️ Slip</span>
+                </button>
+                <button onclick="loadSlipForEditById(${item.row_id})" 
+                        class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-700 rounded-lg font-bold transition flex items-center space-x-1">
+                  <span>✏️ Edit</span>
+                </button>
+              </div>
+            </div>
+          `;
+          mobileCards.appendChild(card);
+        }
       });
+    }
+
+    // Helper panggil modal & edit berdasarkan row_id
+    function openSlipModalById(rowId) {
+      const item = payrollRecords.find(r => r.row_id === rowId);
+      if (item) openSlipModal(item);
+    }
+
+    function loadSlipForEditById(rowId) {
+      const item = payrollRecords.find(r => r.row_id === rowId);
+      if (item) loadSlipForEdit(item);
     }
 
     function renderKPIs(data) {
